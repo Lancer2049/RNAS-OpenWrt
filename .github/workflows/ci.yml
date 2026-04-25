@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.sh'
+      - '**.lua'
+      - 'package/**'
+      - 'root/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    branches: [main]
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get -qq update && sudo apt-get -qq install -y shellcheck
+
+      - name: Run shellcheck
+        run: |
+          echo "=== Shell Scripts ==="
+          find . -name "*.sh" -not -path "./.git/*" | sort | while read f; do
+            result=$(shellcheck -x "$f" 2>&1)
+            if [ -n "$result" ]; then
+              echo "❌ $f"
+              echo "$result"
+            else
+              echo "✅ $f"
+            fi
+          done
+
+  verify-structure:
+    name: Verify Structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify required files
+        run: |
+          echo "=== Required files ==="
+          set -e
+          for f in \
+            root/etc/config/rnas \
+            root/etc/init.d/accel-ppp \
+            root/usr/sbin/accel-ppp-uci \
+            root/etc/uci-defaults/rnas \
+            package/accel-ppp/Makefile \
+            tools/coa-test.sh \
+            tools/acct-verify.sh \
+            tests/pppoe/test-pppoe.sh ; do
+            [ -f "$f" ] && echo "✅ $f" || { echo "❌ MISSING: $f"; exit 1; }
+          done
+
+      - name: Verify no stale UCI refs
+        run: |
+          STALE=$(grep -rn 'uci.*accel-ppp' luci-app-rnas/luasrc/ 2>/dev/null || true)
+          if [ -n "$STALE" ]; then
+            echo "❌ Stale 'accel-ppp' UCI references in LuCI:"
+            echo "$STALE"
+            exit 1
+          fi
+          echo "✅ No stale UCI references in LuCI"
+
+      - name: Verify LuCI ↔ UCI field alignment
+        run: |
+          echo "=== Cross-reference check ==="
+          # Check radius.lua uses auth_server (not server)
+          if grep -q 'option.*"auth_server"' luci-app-rnas/luasrc/model/cbi/rnas/radius.lua; then
+            echo "✅ radius.lua uses auth_server"
+          else
+            echo "❌ radius.lua missing auth_server field"
+            exit 1
+          fi
+          # Check coa.lua doesn't reference radius.coa_port
+          if grep -q 'uci:get.*"coa".*"port"' luci-app-rnas/luasrc/model/cbi/rnas/coa.lua; then
+            echo "✅ coa.lua reads from rnas.coa.port"
+          else
+            echo "❌ coa.lua should read from rnas.coa.port"
+            exit 1
+          fi
