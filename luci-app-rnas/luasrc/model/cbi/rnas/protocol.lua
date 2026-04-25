@@ -1,92 +1,116 @@
-local map, section, fort = Map("rnas", translate("Protocol Configuration"), translate("Configure access protocol settings."))
+local map = Map("rnas", translate("Protocol Configuration"),
+    translate("Configure access protocols. Each protocol maps to a named section in /etc/config/rnas."))
 
-s = section
-s:tab("pppoe", translate("PPPoE"))
-s:tab("ipoe", translate("IPoE"))
-s:tab("l2tp", translate("L2TP"))
-s:tab("pptp", translate("PPTP"))
-s:tab("sstp", translate("SSTP"))
+-- ===== PPPoE section =====
+local pppoe = map:section(NamedSection, "pppoe", "pppoe", translate("PPPoE"))
 
-o = s:taboption("pppoe", Flag, "pppoe_enabled", translate("Enable PPPoE"))
-o.default = o.enabled
+pppoe:tab("general", translate("General"))
+pppoe:tab("advanced", translate("Advanced"))
 
-o = s:taboption("pppoe", Value, "pppoe_interface", translate("Interface"))
+o = pppoe:taboption("general", Value, "interface", translate("Interface"))
+o.datatype = "network"
 o.placeholder = "br-lan"
+o.rmempty = false
 
-o = s:taboption("pppoe", Value, "pppoe_mtu", translate("MTU"))
+o = pppoe:taboption("general", Value, "ac_name", translate("AC Name"))
+o.placeholder = "RNAS"
+o.default = "RNAS"
+
+o = pppoe:taboption("advanced", Value, "service_name", translate("Service Name"))
+o.placeholder = translate("Leave empty for any")
+
+o = pppoe:taboption("advanced", Value, "verbose", translate("Verbose Level"))
+o.datatype = "uinteger"
+o.default = "1"
+
+-- ===== PPP section (global PPP parameters) =====
+local ppp = map:section(NamedSection, "ppp", "ppp", translate("PPP Settings"))
+
+o = ppp:option(Value, "mtu", translate("MTU"))
 o.datatype = "uinteger"
 o.default = "1492"
 
-o = s:taboption("pppoe", Value, "pppoe_mru", translate("MRU"))
+o = ppp:option(Value, "mru", translate("MRU"))
 o.datatype = "uinteger"
 o.default = "1492"
 
-o = s:taboption("pppoe", Value, "pppoe_service_name", translate("Service Name"))
-
-o = s:taboption("pppoe", Value, "pppoe_ac_name", translate("AC Name"))
-
-o = s:taboption("ipoe", Flag, "ipoe_enabled", translate("Enable IPoE"))
-o.default = o.disabled
-
-o = s:taboption("ipoe", Value, "ipoe_interface", translate("Interface"))
-o.placeholder = "br-lan"
-
-o = s:taboption("ipoe", ListValue, "ipoe_mode", translate("Mode"))
-o:value("L2", "Layer 2")
-o:value("L3", "Layer 3")
-o.default = "L2"
-
-o = s:taboption("ipoe", Value, "ipoe_username_format", translate("Username Format"))
-o:value("mac", "MAC Address")
-o:value("dhcp", "DHCP Option")
-o.default = "mac"
-
-o = s:taboption("ipoe", Value, "ipoe_lease_time", translate("Lease Time (seconds)"))
+o = ppp:option(Value, "min_mtu", translate("Minimum MTU"))
 o.datatype = "uinteger"
-o.default = "600"
+o.default = "1280"
 
-o = s:taboption("l2tp", Flag, "l2tp_enabled", translate("Enable L2TP"))
+o = ppp:option(Value, "lcp_echo_interval", translate("LCP Echo Interval (s)"))
+o.datatype = "uinteger"
+o.default = "30"
+
+o = ppp:option(Value, "lcp_echo_failure", translate("LCP Echo Failure Count"))
+o.datatype = "uinteger"
+o.default = "3"
+
+-- ===== IPoE section =====
+local ipoe = map:section(NamedSection, "ipoe", "ipoe", translate("IPoE (DHCP+)"))
+ipoe.addremove = true
+
+o = ipoe:option(Flag, "enabled", translate("Enable IPoE"))
 o.default = o.disabled
+o.rmempty = false
 
-o = s:taboption("l2tp", Value, "l2tp_listen", translate("Listen Address"))
-o.datatype = "ipaddr"
-o.placeholder = "0.0.0.0"
+o = ipoe:option(Value, "interface", translate("Interface"))
+o.datatype = "network"
+o.placeholder = "br-lan"
+o:depends("enabled", "1")
 
-o = s:taboption("l2tp", Value, "l2tp_port", translate("Port"))
+o = ipoe:option(Value, "verbose", translate("Verbose Level"))
+o.datatype = "uinteger"
+o.default = "1"
+o:depends("enabled", "1")
+
+-- ===== L2TP section =====
+local l2tp = map:section(NamedSection, "l2tp", "l2tp", translate("L2TP"))
+l2tp.addremove = true
+
+o = l2tp:option(Flag, "enabled", translate("Enable L2TP"))
+o.default = o.disabled
+o.rmempty = false
+
+o = l2tp:option(Value, "port", translate("Port"))
 o.datatype = "port"
 o.default = "1701"
+o:depends("enabled", "1")
 
-o = s:taboption("l2tp", Value, "l2tp_hello_interval", translate("Hello Interval"))
+o = l2tp:option(Value, "verbose", translate("Verbose Level"))
 o.datatype = "uinteger"
-o.default = "60"
+o.default = "1"
+o:depends("enabled", "1")
 
-o = s:taboption("pptp", Flag, "pptp_enabled", translate("Enable PPTP"))
+-- ===== PPTP section =====
+local pptp = map:section(NamedSection, "pptp", "pptp", translate("PPTP"))
+pptp.addremove = true
+
+o = pptp:option(Flag, "enabled", translate("Enable PPTP"))
 o.default = o.disabled
+o.rmempty = false
 
-o = s:taboption("pptp", Value, "pptp_listen", translate("Listen Address"))
-o.datatype = "ipaddr"
-o.placeholder = "0.0.0.0"
+o = pptp:option(Value, "verbose", translate("Verbose Level"))
+o.datatype = "uinteger"
+o.default = "1"
+o:depends("enabled", "1")
 
-o = s:taboption("pptp", Value, "pptp_port", translate("Port"))
-o.datatype = "port"
-o.default = "1723"
+-- ===== SSTP section =====
+local sstp = map:section(NamedSection, "sstp", "sstp", translate("SSTP"))
+sstp.addremove = true
 
-o = s:taboption("pptp", Flag, "pptp_mppe", translate("Enable MPPE Encryption"))
-o.default = o.enabled
-
-o = s:taboption("sstp", Flag, "sstp_enabled", translate("Enable SSTP"))
+o = sstp:option(Flag, "enabled", translate("Enable SSTP"))
 o.default = o.disabled
+o.rmempty = false
 
-o = s:taboption("sstp", Value, "sstp_listen", translate("Listen Address"))
-o.datatype = "ipaddr"
-o.placeholder = "0.0.0.0"
-
-o = s:taboption("sstp", Value, "sstp_port", translate("Port"))
+o = sstp:option(Value, "port", translate("Port"))
 o.datatype = "port"
 o.default = "443"
+o:depends("enabled", "1")
 
-o = s:taboption("sstp", Value, "sstp_cert", translate("SSL Certificate Path"))
-
-o = s:taboption("sstp", Value, "sstp_key", translate("SSL Key Path"))
+o = sstp:option(Value, "verbose", translate("Verbose Level"))
+o.datatype = "uinteger"
+o.default = "1"
+o:depends("enabled", "1")
 
 return map
