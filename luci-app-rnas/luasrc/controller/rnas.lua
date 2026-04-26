@@ -124,8 +124,14 @@ function get_status_data()
 
     -- Determine active protocol from UCI
     local protocol = "disabled"
-    for _, proto in ipairs({"pppoe", "ipoe", "l2tp", "pptp", "sstp"}) do
-        if uci:get("rnas", proto, "interface") then
+    -- PPPoE: active when interface is set (no enabled flag)
+    if uci:get("rnas", "pppoe", "interface") then
+        protocol = "pppoe"
+    end
+    -- IPoE/L2TP/PPTP/SSTP: active when enabled=1 AND interface set
+    for _, proto in ipairs({"ipoe", "l2tp", "pptp", "sstp"}) do
+        if uci:get("rnas", proto, "enabled") == "1"
+            and uci:get("rnas", proto, "interface") then
             protocol = proto
             break
         end

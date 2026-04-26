@@ -72,6 +72,11 @@ o = l2tp:option(Flag, "enabled", translate("Enable L2TP"))
 o.default = o.disabled
 o.rmempty = false
 
+o = l2tp:option(Value, "interface", translate("Interface"))
+o.datatype = "network"
+o.placeholder = "br-lan"
+o:depends("enabled", "1")
+
 o = l2tp:option(Value, "port", translate("Port"))
 o.datatype = "port"
 o.default = "1701"
@@ -90,6 +95,11 @@ o = pptp:option(Flag, "enabled", translate("Enable PPTP"))
 o.default = o.disabled
 o.rmempty = false
 
+o = pptp:option(Value, "interface", translate("Interface"))
+o.datatype = "network"
+o.placeholder = "br-lan"
+o:depends("enabled", "1")
+
 o = pptp:option(Value, "verbose", translate("Verbose Level"))
 o.datatype = "uinteger"
 o.default = "1"
@@ -102,6 +112,11 @@ sstp.addremove = true
 o = sstp:option(Flag, "enabled", translate("Enable SSTP"))
 o.default = o.disabled
 o.rmempty = false
+
+o = sstp:option(Value, "interface", translate("Interface"))
+o.datatype = "network"
+o.placeholder = "br-lan"
+o:depends("enabled", "1")
 
 o = sstp:option(Value, "port", translate("Port"))
 o.datatype = "port"
