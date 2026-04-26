@@ -1,7 +1,7 @@
 # RNAS Development State
 
 **Session Date**: 2026-04-26
-**Status**: ✅ AAA + CoA verified, LuCI live-data wired, RNAS config on VM1
+**Status**: ✅ Phase 1 core platform built — v2 architecture, config engine, API, frontend
 
 ## Current Goal
 Build RNAS as a standalone OpenWrt-based software NAS — deep accel-ppp integration with UCI/procd/LuCI.
