@@ -1,21 +1,7 @@
 <div class="cbi-section">
-	<h3><%:Active Connections%></h3>
-	
+	<h3><%:Active Sessions%></h3>
+
 	<%
-	local connections = {}
-	
-	local f = io.popen("accel-cmd show sessions 2>/dev/null || echo ''")
-	if f then
-		local output = f:read("*a")
-		f:close()
-		
-		for line in output:gmatch("[^\r\n]+") do
-			if line:match("^%d") then
-				table.insert(connections, line)
-			end
-		end
-	end
-	
 	local function format_bytes(b)
 		local n = tonumber(b) or 0
 		if n < 1024 then return n .. " B" end
@@ -23,43 +9,64 @@
 		if n < 1073741824 then return string.format("%.1f MB", n/1048576) end
 		return string.format("%.2f GB", n/1073741824)
 	end
+
+	local connections = {}
+	local raw = luci.sys.exec(
+		"accel-cmd show sessions " ..
+		"sid,ifname,username,ip,type,state,uptime-raw,rx-bytes-raw,tx-bytes-raw " ..
+		"2>/dev/null"
+	)
+	if raw and raw ~= "" then
+		local in_body = false
+		for line in raw:gmatch("[^\r\n]+") do
+			if in_body then
+				local cols = {}
+				for col in line:gmatch("%S+") do
+					table.insert(cols, col)
+				end
+				if #cols >= 9 then
+					table.insert(connections, cols)
+				end
+			elseif line:match("^%s*ifname") or line:match("^%-+") then
+				in_body = true
+			end
+		end
+	end
 	%>
-	
+
 	<table class="cbi-section-table">
 		<tr>
-			<th>ID</th>
+			<th>SID</th>
 			<th>Interface</th>
 			<th>Username</th>
 			<th>IP Address</th>
+			<th>Type</th>
 			<th>State</th>
+			<th>Uptime</th>
 			<th>RX</th>
 			<th>TX</th>
 		</tr>
 		<% if #connections == 0 then %>
 		<tr>
-			<td colspan="7" style="text-align:center"><%:No active connections%></td>
+			<td colspan="9" style="text-align:center"><%:No active sessions%></td>
 		</tr>
 		<% else %>
-		<% for _, line in ipairs(connections) do %>
-		<%
-		local fields = {}
-		for field in line:gmatch("[^%s]+") do
-			table.insert(fields, field)
-		end
-		%>
+		<% for _, cols in ipairs(connections) do %>
 		<tr>
-			<td><%=fields[1] or "-"%></td>
-			<td><%=fields[2] or "-"%></td>
-			<td><%=fields[3] or "-"%></td>
-			<td><%=fields[4] or "-"%></td>
-			<td><span class="label success"><%=fields[5] or "-"%></span></td>
-			<td><%=format_bytes(fields[7] or 0)%></td>
-			<td><%=format_bytes(fields[8] or 0)%></td>
+			<td><%=cols[1] or "-"%></td>
+			<td><%=cols[2] or "-"%></td>
+			<td><%=cols[3] or "-"%></td>
+			<td><%=cols[4] or "-"%></td>
+			<td><%=cols[5] or "-"%></td>
+			<td><span class="label success"><%=cols[6] or "-"%></span></td>
+			<td><%=cols[7] or "-"%></td>
+			<td><%=format_bytes(cols[8] or 0)%></td>
+			<td><%=format_bytes(cols[9] or 0)%></td>
 		</tr>
 		<% end %>
 		<% end %>
 	</table>
-	
+
 	<div style="margin-top:10px">
 		<a href="<%=luci.dispatcher.build_url("admin/network/rnas/sessions")%>" class="btn"><%:Manage Sessions%></a>
 	</div>

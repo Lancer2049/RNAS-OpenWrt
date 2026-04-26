@@ -1,6 +1,16 @@
 <div class="cbi-section">
 	<h3><%:Active Sessions%></h3>
-	
+
+	<%
+	local function format_bytes(b)
+		local n = tonumber(b) or 0
+		if n < 1024 then return n .. " B" end
+		if n < 1048576 then return string.format("%.1f KB", n/1024) end
+		if n < 1073741824 then return string.format("%.1f MB", n/1048576) end
+		return string.format("%.2f GB", n/1073741824)
+	end
+	%>
+
 	<table class="cbi-section-table">
 		<tr>
 			<th><%:Session ID%></th>
@@ -13,29 +23,29 @@
 			<th><%:TX%></th>
 			<th><%:Actions%></th>
 		</tr>
-		<% if #sessions == 0 then %>
+		<% if not sessions or #sessions == 0 then %>
 		<tr>
-			<td colspan="9"><%:No active sessions%></td>
+			<td colspan="9" style="text-align:center"><%:No active sessions%></td>
 		</tr>
 		<% else %>
 		<% for i, sess in ipairs(sessions) do %>
 		<tr>
-			<td><%=sess.sid%></td>
-			<td><%=sess.ifname%></td>
-			<td><%=sess.username%></td>
-			<td><%=sess.ipaddr%></td>
+			<td><%=sess.sid or "-"%></td>
+			<td><%=sess.ifname or "-"%></td>
+			<td><%=sess.username or "-"%></td>
+			<td><%=sess.ip or "-"%></td>
 			<td>
 				<% if sess.state == "active" then %>
 				<span class="label success"><%:Active%></span>
 				<% else %>
-				<span class="label"><%=sess.state%></span>
+				<span class="label"><%=sess.state or "-"%></span>
 				<% end %>
 			</td>
-			<td><%=sess.uptime%></td>
-			<td><%=format_bytes(sess.rx_bytes)%></td>
-			<td><%=format_bytes(sess.tx_bytes)%></td>
+			<td><%=sess.uptime or "-"%></td>
+			<td><%=format_bytes(sess.rx_bytes or 0)%></td>
+			<td><%=format_bytes(sess.tx_bytes or 0)%></td>
 			<td>
-				<a href="<%=luci.dispatcher.build_url("admin/network/rnas/sessions/terminate")%>?sid=<%=sess.sid%>" class="btn btn-danger"><%:Terminate%></a>
+				<a href="<%=luci.dispatcher.build_url("admin/network/rnas/sessions/terminate")%>?sid=<%=sess.sid%>" class="btn btn-danger"><%:Drop%></a>
 			</td>
 		</tr>
 		<% end %>

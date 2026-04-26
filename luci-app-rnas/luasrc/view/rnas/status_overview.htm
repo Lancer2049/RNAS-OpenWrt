@@ -1,17 +1,28 @@
 <div class="cbi-section">
 	<h3><%:System Overview%></h3>
-	
+
 	<%
 	local uci = require("uci").cursor()
-	local utl = require("luci.util")
-	
+
 	local status = {
-		enabled = uci:get("rnas", "config", "enabled") or "0",
-		protocol = uci:get("rnas", "config", "protocol") or "pppoe",
-		server = uci:get("rnas", "radius", "server") or "N/A",
-		secret_set = uci:get("rnas", "radius", "secret") and "Yes" or "No"
+		enabled = uci:get("rnas", "global", "enabled") or "0",
+		server = uci:get("rnas", "radius", "auth_server") or "N/A",
+		auth_port = uci:get("rnas", "radius", "auth_port") or "1812",
+		acct_port = uci:get("rnas", "radius", "acct_port") or "1813",
+		secret_set = uci:get("rnas", "radius", "secret") and "Yes" or "No",
+		nas_identifier = uci:get("rnas", "radius", "nas_identifier") or "rnas",
+		coa_enabled = uci:get("rnas", "coa", "enabled") or "0",
 	}
-	
+
+	local active_protos = {}
+	for _, proto in ipairs({"pppoe", "ipoe", "l2tp", "pptp", "sstp"}) do
+		local iface = uci:get("rnas", proto, "interface")
+		if iface and iface ~= "" then
+			table.insert(active_protos, proto:upper())
+		end
+	end
+	status.protocols = #active_protos > 0 and table.concat(active_protos, ", ") or "None"
+
 	local uptime = "N/A"
 	local f = io.popen("cat /proc/uptime")
 	if f then
@@ -27,7 +38,7 @@
 			end
 		end
 	end
-	
+
 	local meminfo = {}
 	f = io.popen("cat /proc/meminfo")
 	if f then
@@ -42,30 +53,56 @@
 		mem_used = math.floor((meminfo.MemTotal - meminfo.MemAvailable) / 1024)
 	end
 	local mem_total = meminfo.MemTotal and math.floor(meminfo.MemTotal / 1024) or 0
+
+	local service_uptime = "N/A"
+	f = io.popen("accel-cmd show stat 2>/dev/null | grep 'uptime:' | awk '{print $2}'")
+	if f then
+		local srv_up = f:read("*a"):match("%S+")
+		f:close()
+		if srv_up then service_uptime = srv_up end
+	end
 	%>
-	
+
 	<table class="cbi-section-table">
 		<tr>
 			<th width="40%"><%:Service Status%></th>
 			<td>
 				<% if status.enabled == "1" then %>
-				<span class="label success"><%:Enabled%></span>
+				<span class="label success"><%:Running%></span>
 				<% else %>
-				<span class="label warning"><%:Disabled%></span>
+				<span class="label warning"><%:Stopped%></span>
 				<% end %>
 			</td>
 		</tr>
 		<tr>
-			<th><%:Protocol%></th>
-			<td><%=status.protocol:upper()%></td>
+			<th><%:NAS Identifier%></th>
+			<td><%=status.nas_identifier%></td>
+		</tr>
+		<tr>
+			<th><%:Active Protocols%></th>
+			<td><%=status.protocols%></td>
 		</tr>
 		<tr>
 			<th><%:RADIUS Server%></th>
-			<td><%=status.server%></td>
+			<td><%=status.server%> (Auth: <%=status.auth_port%>, Acct: <%=status.acct_port%>)</td>
 		</tr>
 		<tr>
 			<th><%:Secret Configured%></th>
 			<td><%=status.secret_set%></td>
+		</tr>
+		<tr>
+			<th><%:CoA Enabled%></th>
+			<td>
+				<% if status.coa_enabled == "1" then %>
+				<span class="label success"><%:Yes%></span>
+				<% else %>
+				<span class="label"><%:No%></span>
+				<% end %>
+			</td>
+		</tr>
+		<tr>
+			<th><%:Service Uptime%></th>
+			<td><%=service_uptime%></td>
 		</tr>
 		<tr>
 			<th><%:System Uptime%></th>
