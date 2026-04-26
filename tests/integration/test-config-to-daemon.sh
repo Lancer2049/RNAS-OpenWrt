@@ -52,4 +52,21 @@ else
 fi
 
 echo ""
+echo "=== 5. dnsmasq config generation ==="
+DNSMASQ_OUT="/tmp/rnas-test-dnsmasq.conf"
+python3 "$PROJECT_DIR/cmd/rnas-config/rnas_config.py" \
+    --root "$PROJECT_DIR/configs" generate dnsmasq -o "$DNSMASQ_OUT"
+grep -q "dhcp-range=" "$DNSMASQ_OUT" && echo "  OK: dhcp-range"
+grep -q "dhcp-option=6" "$DNSMASQ_OUT" && echo "  OK: dns servers"
+
+echo ""
+echo "=== 6. Firewall config generation ==="
+FW_OUT="/tmp/rnas-test-nftables.conf"
+python3 "$PROJECT_DIR/cmd/rnas-config/rnas_config.py" \
+    --root "$PROJECT_DIR/configs" generate firewall -o "$FW_OUT"
+grep -q "flush ruleset" "$FW_OUT" && echo "  OK: flush ruleset"
+grep -q "table inet rnas" "$FW_OUT" && echo "  OK: nftables table"
+grep -q "192.168.100.0/24" "$FW_OUT" && echo "  OK: PPP pool allowed"
+
+echo ""
 echo "=== PASS ==="
