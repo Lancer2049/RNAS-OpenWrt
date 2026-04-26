@@ -1,0 +1,15 @@
+[Unit]
+Description=RNAS SNMP Agent
+Documentation=https://github.com/Lancer2049/RNAS
+After=network-online.target
+PartOf=rnas.target
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/rnas-config generate snmp -o /var/run/rnas/snmpd.conf
+ExecStart=/usr/sbin/snmpd -f -c /var/run/rnas/snmpd.conf
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=rnas.target
