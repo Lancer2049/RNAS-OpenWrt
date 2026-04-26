@@ -1,21 +1,20 @@
 # RNAS — RADIUS Network Access Server
 
-**OpenWrt-based software NAS with accel-ppp deep integration.**
+**Standalone NAS simulation platform for x86 Linux — unified config engine, web dashboard, systemd-native.**
 
 [![CI](https://github.com/Lancer2049/RNAS/actions/workflows/ci.yml/badge.svg)](https://github.com/Lancer2049/RNAS/actions/workflows/ci.yml)
 
-A specialized OpenWrt distribution that embeds accel-ppp as a fully native service — appearing not as a third-party add-on, but as if it were built into OpenWrt from day one. Provides RADIUS AAA (Authentication, Authorization, Accounting) and CoA for PPPoE/IPoE/L2TP/PPTP access protocols.
+RNAS deep-integrates **accel-ppp** with standard Linux networking (dnsmasq, nftables, tc, strongSwan) under a unified `/etc/rnas/` configuration tree and a single-page web dashboard — no OpenWrt firmware required. Runs on any Debian/Ubuntu/UOS x86_64 host or VM.
 
 ---
 
 ## 📊 Project Status
 
 ```
-Phase 0 (Code Integration)  ████████████████████ 100%  UCI + procd + package build
-Phase 1 (RADIUS Core)       ████████████████████ 100%  CoA tools + accounting verify + test suite
-Phase 2 (E2E Testing)       ██████░░░░░░░░░░░░░░  30%  Awaiting real OpenWrt deployment
-Phase 3 (LuCI Web UI)       ████░░░░░░░░░░░░░░░░  20%  Skeleton exists, needs live data wiring
-Phase 4 (Image Build)       ██░░░░░░░░░░░░░░░░░░  10%  Package builds, no bootable image yet
+Phase 1 (Core Platform)  ████████████████████ 100%  Config engine + API + Dashboard
+Phase 2 (Network + QoS)  ░░░░░░░░░░░░░░░░░░░░   0%  dnsmasq/nftables/tc generators
+Phase 3 (VPN + Hotspot)  ░░░░░░░░░░░░░░░░░░░░   0%  strongSwan/WireGuard/CoovaChilli
+Phase 4 (HA + Packaging) ░░░░░░░░░░░░░░░░░░░░   0%  keepalived + deb packages
 ```
 
 ---
@@ -23,22 +22,29 @@ Phase 4 (Image Build)       ██░░░░░░░░░░░░░░░�
 ## 🎯 Architecture
 
 ```
-┌──────────────┐   PPPoE/IPoE    ┌────────────────────┐   RADIUS    ┌──────────────┐
-│   CPE Client │ ──────────────→ │       RNAS         │ ─────────→ │  FreeRADIUS  │
-│   (VM3)      │                 │  (OpenWrt + accel)  │ ←───────── │  + AIRadius  │
-└──────────────┘                 └────────────────────┘    CoA      └──────────────┘
-                                        │
-                                  ┌─────▼─────┐
-                                  │  LuCI Web │   Port 80/443
-                                  │  accel-cmd│
-                                  └───────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                 RNAS Web Dashboard (Vue.js SPA)              │
+│          Status │ Sessions │ Config │ Disconnect            │
+├──────────────────────────────────────────────────────────────┤
+│                    rnas-api (FastAPI)                        │
+├──────────────────────────────────────────────────────────────┤
+│                    rnas-config engine                        │
+│        /etc/rnas/*.conf  ──generate──►  native configs       │
+├──────────┬──────────┬──────────┬──────────┬─────────────────┤
+│ accel-ppp│ dnsmasq  │ nftables │  tc/SQM  │  strongSwan/WG  │
+│(PPPoE/   │(DHCP/DNS)│(firewall)│(CAKE/    │  keepalived     │
+│ L2TP/IPoE│          │          │ fq_codel) │  CoovaChilli    │
+├──────────┴──────────┴──────────┴──────────┴─────────────────┤
+│              Standard x86 Linux Kernel + systemd            │
+│          (Debian / Ubuntu / UOS — no firmware needed)        │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-RNAS is **not** a general-purpose NAS or router. It is a **RADIUS NAS appliance**:
-- Terminates PPPoE/IPoE/L2TP/PPTP connections from CPE clients
-- Authenticates users via RADIUS (forwarding to FreeRADIUS or equivalent)
-- Sends complete RADIUS Accounting records (Start/Interim/Stop)
-- Accepts CoA (Change of Authorization) and Disconnect-Request via port 3799
+**Design principles:**
+- **Fusion, not aggregation** — accel-ppp and Linux services share one config tree, not packaged side-by-side
+- **One config tree** — `/etc/rnas/` serves UCI-style config for all services
+- **systemd native** — services use systemd units, not procd or init scripts
+- **Installable, not flashable** — `bash scripts/install.sh` on any x86 Linux
 
 ---
 
@@ -46,130 +52,108 @@ RNAS is **not** a general-purpose NAS or router. It is a **RADIUS NAS appliance*
 
 ```
 RNAS/
-├── README.md
-├── package/                          # OpenWrt package build system
-│   └── accel-ppp/
-│       ├── Makefile                  # Standard OpenWrt package definition
-│       └── patches/001-openwrt-compat.patch
-├── root/                             # OpenWrt filesystem overlay (UCI + init)
-│   └── etc/
-│       ├── config/rnas               # UCI configuration
-│       ├── init.d/accel-ppp          # procd service (hot-reload via SIGHUP)
-│       └── uci-defaults/rnas         # First-boot defaults
-│   └── usr/sbin/accel-ppp-uci        # UCI → accel-ppp.conf translator
-├── luci-app-rnas/                    # LuCI web management interface
-│   └── luasrc/
-├── configs/                          # Protocol config templates
-│   ├── pppoe.conf
-│   ├── ipoe.conf
-│   └── l2tp.conf
-├── tools/                            # CLI testing & monitoring tools
-│   ├── coa-test.sh                   # CoA/Disconnect test tool
-│   ├── acct-verify.sh                # RFC 2866 accounting compliance check
-│   ├── radius-capture.sh             # tcpdump wrapper for RADIUS ports
-│   └── session-monitor.sh            # Real-time session display
+├── cmd/rnas-config/                  # Unified config engine (Python)
+│   └── rnas_config.py               #   INI parser + tree walker + accel-ppp generator
+├── web/
+│   ├── api/                          # FastAPI backend
+│   │   ├── main.py                   #   App entry point
+│   │   ├── routes/status.py          #   /api/status, /api/sessions, disconnect
+│   │   ├── routes/config.py          #   /api/config CRUD
+│   │   └── services/accel_cmd.py     #   accel-cmd subprocess wrapper
+│   └── frontend/                     # Vue.js 3 SPA dashboard
+│       ├── src/App.vue               #   Main layout with status + sessions
+│       ├── src/components/
+│       │   ├── StatusCard.vue        #   Uptime, CPU, mem, RADIUS state
+│       │   └── SessionsTable.vue     #   Live table with disconnect action
+│       └── vite.config.js
+├── configs/                          # /etc/rnas/ config templates
+│   ├── rnas.conf                     #   Global settings
+│   ├── access.d/                     #   accel-ppp: core, radius, pppoe, ipoe, ...
+│   └── network.d/                    #   interfaces, dhcp, firewall
+├── systemd/                          # systemd unit files
+│   ├── rnas.target                   #   Master target
+│   ├── rnas-accel-ppp.service        #   accel-ppp daemon
+│   ├── rnas-dnsmasq.service          #   DHCP/DNS
+│   └── rnas-firewall.service         #   nftables firewall
+├── tools/                            # CLI testing & monitoring
+│   ├── coa-test.sh                   #   CoA/Disconnect test tool
+│   ├── acct-verify.sh                #   RFC 2866 compliance checker
+│   ├── radius-capture.sh             #   tcpdump for RADIUS ports
+│   └── post-reboot-verify.sh         #   Post-deployment AAA verification
 ├── tests/                            # Test suites
-│   ├── pppoe/test-pppoe.sh           # 10-test PPPoE suite
-│   ├── radius/                       # FreeRADIUS test config
-│   └── run-all-tests.sh
-└── scripts/
-    ├── build/build-accel-ppp.sh       # Source build script
-    └── deploy/install-vm3-cpe.sh     # CPE client provisioning
+│   └── integration/
+│       └── test-config-to-daemon.sh  #   Config generation → daemon start
+├── scripts/
+│   ├── install.sh                    #   One-command installer
+│   └── build/build-accel-ppp.sh      #   Source build script
+├── luci-app-rnas/                    #   Legacy LuCI (v1, for OpenWrt)
+├── package/accel-ppp/                #   OpenWrt package (secondary target)
+├── docker/                           #   Docker test environments
+└── docs/plans/                       #   Design & implementation plans
 ```
-
----
-
-## ✅ What Works (Phase 0+1)
-
-### Deep Integration (Phase 0)
-- **UCI Configuration** — All accel-ppp settings managed via `uci set rnas.xxx.yyy`, not hand-edited config files
-- **procd Init** — `service accel-ppp start/stop/reload`, with SIGHUP hot-reload
-- **OpenWrt Package** — Standard `package/accel-ppp/Makefile` for `make package/accel-ppp/compile`
-- **UCI Translator** — `accel-ppp-uci generate` auto-generates native accel-ppp.conf from UCI
-- **First-boot Ready** — `uci-defaults/rnas` pre-configures PPPoE + RADIUS on factory reset
-
-### RADIUS Tools (Phase 1)
-- **CoA Test** (`tools/coa-test.sh`) — 6 sub-commands: disconnect, bandwidth, timeout, data-limit, test, show
-- **Accounting Verify** (`tools/acct-verify.sh`) — RFC 2866/2867 compliance checker
-- **RADIUS Capture** (`tools/radius-capture.sh`) — Live capture on ports 1812/1813/3799
-- **PPPoE Test Suite** (`tests/pppoe/test-pppoe.sh`) — 10 real tests with tcpdump verification
-- **VM3 CPE Deploy** (`scripts/deploy/install-vm3-cpe.sh`) — Ubuntu provisioning as PPPoE/L2TP client
-- **FreeRADIUS Test Config** (`tests/radius/`) — Pre-configured test users + virtual server
-
-### LuCI Web Interface (Phase 3 — partial)
-- **7-page skeleton** — Overview, RADIUS Settings, Protocol Config, IP Pool, Sessions, CoA Control, Status
-- **Controller logic** — Session terminate + CoA disconnect actions wired
-- **Status API** — Returns uptime, session count, protocol state
 
 ---
 
 ## 🔧 Quick Start
 
-### Build from Source
+### Install on Debian/Ubuntu/UOS (x86_64)
 
 ```bash
 git clone https://github.com/Lancer2049/RNAS.git
 cd RNAS
-
-# Build accel-ppp from source (standalone, no SDK needed)
-./scripts/build/build-accel-ppp.sh
-
-# Build as OpenWrt package (requires OpenWrt SDK)
-./scripts/build/build-accel-ppp.sh --sdk /path/to/openwrt-sdk
+sudo bash scripts/install.sh
 ```
 
-### Test on Existing Linux
+### Start the web dashboard
 
 ```bash
-# Install accel-ppp (Ubuntu/Debian)
-sudo apt install accel-ppp
+# Start API
+cd web/api
+PYTHONPATH=. uvicorn main:app --host 0.0.0.0 --port 8099 &
 
-# Or use our build output
-cp build/accel-ppp/install/usr/sbin/accel-pppd /usr/local/sbin/
-cp build/accel-ppp/install/usr/sbin/accel-cmd  /usr/local/sbin/
-
-# Run with test config
-accel-pppd -c configs/pppoe.conf -d
+# Start frontend dev server (or serve dist/ with nginx)
+cd web/frontend
+npm install && npm run dev
 ```
 
-### Run Tests
+### Run tests
 
 ```bash
-# Full PPPoE test suite
-./tests/pppoe/test-pppoe.sh all
+# Config → daemon integration test
+bash tests/integration/test-config-to-daemon.sh
 
 # CoA disconnect test
 ./tools/coa-test.sh disconnect -s 192.168.0.85 -r testing123 -u testuser
 
-# Accounting compliance check
-./tools/acct-verify.sh verify
+# Full PPPoE test suite
+./tests/pppoe/test-pppoe.sh all
 ```
 
 ---
 
-## 🚧 In Progress / Planned
+## 🚧 Roadmap
 
-| Feature | Status | Priority |
-|---------|--------|----------|
-| Bootable OpenWrt image with accel-ppp baked in | Not started | 🔴 P0 |
-| LuCI: live session list from accel-cmd output | Not started | 🔴 P0 |
-| LuCI: real CoA/logs/metrics wiring | Not started | 🔴 P0 |
-| IPoE protocol testing | Config only | 🟡 P1 |
-| L2TP protocol testing | Config only | 🟡 P1 |
-| Multi-protocol QoS | Removed (not in scope) | ⬜ |
-| WiFi AC emulation | Planned | 🟢 P2 |
+| Phase | Feature | Status |
+|-------|---------|--------|
+| ✅ v1 | accel-ppp UCI + LuCI + CoA tools | Complete |
+| ✅ v1 | Three-node AAA end-to-end verified | Complete |
+| ✅ v2 P1 | `/etc/rnas/` unified config + rnas-config engine | Complete |
+| ✅ v2 P1 | FastAPI backend + Vue.js dashboard | Complete |
+| ✅ v2 P1 | systemd units + install script | Complete |
+| 🟡 v2 P1 | dnsmasq/nftables config generators | Next |
+| 🟡 v2 P2 | tc/SQM QoS integration | Planned |
+| 🟡 v2 P2 | strongSwan / WireGuard / OpenVPN | Planned |
+| 🟢 v2 P3 | CoovaChilli hotspot + keepalived HA | Planned |
 
 ---
 
-## 🌐 Three-Node Test Architecture
+## 🌐 Three-Node Test Topology
 
 ```
-VM1: RNAS              192.168.0.x      OpenWrt + accel-ppp (PPPoE Server + RADIUS Client)
-VM2: FreeRADIUS+AIRadius 192.168.0.85    RADIUS Server + Web Management
-VM3: CPE Client         192.168.0.82    Ubuntu (PPPoE/L2TP client + testing)
+VM1: RNAS              192.168.0.84    UOS Desktop + accel-ppp (PPPoE Server)
+VM2: FreeRADIUS+AIRadius 192.168.0.85  RADIUS Server + Web Management
+VM3: CPE Client         192.168.0.82   Ubuntu (PPPoE/L2TP client)
 ```
-
-See `tests/radius/README.md` for FreeRADIUS test configuration.
 
 ---
 
@@ -182,6 +166,7 @@ GPL-2.0 — see [LICENSE](LICENSE)
 ## 🙏 Built On
 
 - [accel-ppp](https://github.com/accel-ppp/accel-ppp) — High-performance VPN server
-- [OpenWrt](https://openwrt.org/) — Embedded Linux distribution
+- [FastAPI](https://fastapi.tiangolo.com/) — Python web framework
+- [Vue.js](https://vuejs.org/) — Frontend framework
 - [FreeRADIUS](https://freeradius.org/) — RADIUS server
-- [AIRadius](https://github.com/Lancer2049/AIRadius) — Web management UI (sibling project)
+- [AIRadius](https://github.com/Lancer2049/AIRadius) — RADIUS web management UI (sibling project)
