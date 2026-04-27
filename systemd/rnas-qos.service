@@ -1,0 +1,13 @@
+[Unit]
+Description=RNAS QoS / Traffic Control
+Documentation=https://github.com/Lancer2049/RNAS
+After=rnas-accel-ppp.service
+PartOf=rnas.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rnas-config generate qos -o /var/run/rnas/tc-rules.sh && bash /var/run/rnas/tc-rules.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=rnas.target

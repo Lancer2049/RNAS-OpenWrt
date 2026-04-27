@@ -1,0 +1,14 @@
+[Unit]
+Description=RNAS High Availability (VRRP)
+Documentation=https://github.com/Lancer2049/RNAS
+After=network-online.target
+PartOf=rnas.target
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/rnas-config generate ha -o /var/run/rnas/keepalived.conf
+ExecStart=/usr/sbin/keepalived -f /var/run/rnas/keepalived.conf --dont-fork
+Restart=on-failure
+
+[Install]
+WantedBy=rnas.target

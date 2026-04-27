@@ -1,0 +1,15 @@
+[Unit]
+Description=RNAS WireGuard VPN
+Documentation=https://github.com/Lancer2049/RNAS
+After=network-online.target
+PartOf=rnas.target
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/rnas-config generate wireguard -o /var/run/rnas/wg0.conf
+ExecStart=/usr/bin/wg-quick up /var/run/rnas/wg0.conf
+ExecStop=/usr/bin/wg-quick down /var/run/rnas/wg0.conf
+Restart=on-failure
+
+[Install]
+WantedBy=rnas.target

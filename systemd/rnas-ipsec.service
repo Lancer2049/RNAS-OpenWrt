@@ -1,0 +1,14 @@
+[Unit]
+Description=RNAS IPsec VPN (strongSwan)
+Documentation=https://github.com/Lancer2049/RNAS
+After=network-online.target
+PartOf=rnas.target
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/rnas-config generate ipsec -o /var/run/rnas/ipsec.conf
+ExecStart=/usr/sbin/ipsec start --conf /var/run/rnas/ipsec.conf
+Restart=on-failure
+
+[Install]
+WantedBy=rnas.target
