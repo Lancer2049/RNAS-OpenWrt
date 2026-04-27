@@ -33,7 +33,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
+import { Chart } from 'chart.js/auto'
 
 const loading = ref(false)
 const sessionsChart = ref(null)
@@ -78,8 +79,6 @@ async function fetchTraffic() {
 
 onMounted(async () => {
   await nextTick()
-  const ChartJS = await import('chart.js/auto')
-  window.Chart = ChartJS.default
   buildChart()
   fetchTraffic()
   refreshTimer = setInterval(fetchTraffic, 10000)

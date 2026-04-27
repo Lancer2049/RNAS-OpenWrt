@@ -30,6 +30,7 @@ import NetworkConfig from './components/NetworkConfig.vue'
 import TrafficMonitor from './components/TrafficMonitor.vue'
 
 const tab = ref('overview')
+const service = ref({ uptime: '--', cpu: '--', mem: '--' })
 const sessions = ref([])
 const loading = ref(true)
 
