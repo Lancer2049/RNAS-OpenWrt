@@ -4,6 +4,7 @@ import json, os, re, subprocess, sys
 from pathlib import Path
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
+from rnas_config import write_config_section
 
 STATIC_DIR = Path(__file__).parent / "static"
 API_ONLY = False
@@ -69,6 +70,25 @@ class RNASHandler(SimpleHTTPRequestHandler):
         else:
             self.send_error(404)
 
+    def do_PUT(self):
+        path = urlparse(self.path).path
+        if path.startswith("/api/config/"):
+            self.handle_config_put(path)
+        else:
+            self.send_error(404)
+
+    def handle_config_put(self, path):
+        content_len = int(self.headers.get('Content-Length', 0))
+        body = json.loads(self.rfile.read(content_len))
+        module = path.replace("/api/config/", "").replace("/", ".")
+        section_name = module.rsplit(".", 1)[-1] if "." in module else module
+        root = Path("/etc/rnas")
+        success = write_config_section(root, section_name, body)
+        if success:
+            self.json(dict(success=True, module=module, updated=body))
+        else:
+            self.send_error(404, "Section not found")
+
     def handle_api(self, path):
         if path == "/api/health":
             self.json(dict(status="ok", version="2.0.0"))
@@ -133,6 +153,13 @@ class RNASHandler(SimpleHTTPRequestHandler):
             except:
                 out = "Logs unavailable"
             self.json(dict(logs=out))
+        elif path == "/api/config/apply":
+            for svc, sub in [("accel-ppp", "accel-ppp"), ("dnsmasq", "dnsmasq"), ("firewall", "firewall"), ("snmp", "snmp")]:
+                subprocess.run(["python3", "/usr/bin/rnas-config", "--root", "/etc/rnas",
+                                "generate", sub, "-o", f"/var/run/rnas/{sub}.conf"],
+                               capture_output=True, timeout=5)
+            subprocess.run(["systemctl", "reload-or-restart", "rnas-accel-ppp", "rnas-dnsmasq"], capture_output=True, timeout=10)
+            self.json(dict(success=True, message="Configuration applied"))
         else:
             self.send_error(404)
 

@@ -314,8 +314,8 @@ def generate_qos(config: Dict[str, Dict[str, str]]) -> str:
     out.append(f"tc qdisc add dev {iface} root handle 1: {algo} bandwidth {rate}")
     if pu.get("enabled") == "yes":
         dr = pu.get("default_rate", "10mbit")
-        out.append(f"# Per-user shaping enabled (via RADIUS attr {pu.get('radius_attr', 'WISPr-Bandwidth-Max-Up')})")
-        out.append(f"tc filter add dev {iface} parent 1: protocol ip handle 1 fw classid 1:1 rate {dr}")
+        out.append(f"# Per-user shaping: RADIUS attr {pu.get('radius_attr', 'WISPr-Bandwidth-Max-Up')} → tc class")
+        out.append(f"# To enable per-user: create HTB classes + iptables MARK per user IP")
     out.append("")
     return "\n".join(out)
 
