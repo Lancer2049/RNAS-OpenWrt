@@ -100,7 +100,6 @@ def generate_accel_ppp(config: Dict[str, Dict[str, str]]) -> str:
     w("[core]")
     if "log_file" in core: w(f"log-error={core['log_file']}")
     if "thread_count" in core: w(f"thread-count={core['thread_count']}")
-    w("daemon=1")
     w()
 
     # Common
