@@ -1,7 +1,60 @@
 # RNAS Development State
 
 **Session Date**: 2026-04-28
-**Status**: ✅ Role swap complete — RNAS on Ubuntu, CPE on UOS, full AAA+CoA verified
+**Status**: RNAS v2 on Ubuntu — 4 services running, web dashboard live, AAA+CoA verified
+
+## Current Architecture
+```
+VM1: CPE Client     192.168.0.201   UOS Desktop (pppoe/pppd)
+VM2: FreeRADIUS     192.168.0.202   Ubuntu (auth/acct + AIRadius)
+VM3: RNAS Server    192.168.0.203   Ubuntu 24.04 (RNAS v2 full stack)
+```
+
+## VM3 Running Services
+| Service | Port | Status |
+|---------|------|--------|
+| rnas-accel-ppp | 3799 (DAE) | ✅ active |
+| rnas-dnsmasq | 53 (DNS) / 67 (DHCP) | ✅ active |
+| nftables | — | ✅ rules loaded |
+| rnas-web | 8099 | ✅ active |
+
+## Access
+- Dashboard: http://192.168.0.203:8099
+- SSH: root@192.168.0.203 (password: 123456)
+
+## Key Deployments on VM3
+- accel-ppp: `/home/lancer/projects/RNAS/build/accel-ppp/install/` (source-built)
+- Config: `/etc/rnas/` (21 templates)
+- Config engine: `/usr/bin/rnas-config`
+- Web server: `/opt/rnas-web/server.py` + `/opt/rnas-web/static/`
+- systemd: `rnas-accel-ppp`, `rnas-dnsmasq`, `rnas-web`
+
+## Completed Today
+- ✅ Role swap: RNAS moved from VM1(UOS) to VM3(Ubuntu 24.04)
+- ✅ Source-built accel-ppp (OpenSSL 3.x, no cross-distro lib issues)
+- ✅ dnsmasq + nftables deployed and running
+- ✅ Web dashboard 6-tab (Overview/Sessions/Network/Config/Services/Tools)
+- ✅ Tools page: Ping, Traceroute, RADIUS Auth Test, CoA Disconnect
+- ✅ Full AAA+CoA end-to-end verified with new IPs
+- ✅ rnas-config: removed hardcoded daemon=1
+- ✅ Git: 41 commits pushed
+
+## Next Session
+1. Deploy remaining modules: QoS (tc), VPN (strongSwan/WireGuard), Hotspot, HA
+2. Make NetworkConfig + ServicesConfig editable (forms, not just read-only tables)
+3. Add System page (service status, logs, backup)
+4. Install remaining services: snmpd, strongSwan, wireguard, keepalived, coova-chilli
+
+## Key Files
+- GitHub: https://github.com/Lancer2049/RNAS
+- VM3 web server: /opt/rnas-web/server.py (stdlib, no pip needed)
+- VM3 accel-ppp: /home/lancer/projects/RNAS/build/accel-ppp/install/
+- VM3 config: /etc/rnas/
+
+## Lessons Learned
+- NEVER cross-distro copy .so files (UOS libc → Ubuntu = kernel panic)
+- Use source-built binaries with matching RPATH
+- systemd Type=simple, no daemon=1 in config
 
 ## Current Architecture
 
