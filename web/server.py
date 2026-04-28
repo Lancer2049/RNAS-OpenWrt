@@ -86,6 +86,32 @@ class RNASHandler(SimpleHTTPRequestHandler):
             sid = path.split("/")[3]
             out = run_accel_cmd("terminate", "sid", sid, "hard")
             self.json(dict(success=True, message=f"Session {sid} terminated"))
+        elif path == "/api/tools/ping":
+            qs = parse_qs(urlparse(self.path).query)
+            host = qs.get("host", ["8.8.8.8"])[0]
+            out = subprocess.run(["ping", "-c", "3", "-W", "2", host],
+                                 capture_output=True, text=True, timeout=10).stdout
+            self.json(dict(output=out))
+        elif path == "/api/tools/trace":
+            qs = parse_qs(urlparse(self.path).query)
+            host = qs.get("host", ["8.8.8.8"])[0]
+            out = subprocess.run(["traceroute", "-m", "10", host],
+                                 capture_output=True, text=True, timeout=15).stdout
+            self.json(dict(output=out))
+        elif path == "/api/tools/radius-test":
+            qs = parse_qs(urlparse(self.path).query)
+            user, passwd = qs.get("user", ["testuser"])[0], qs.get("pass", ["testpass"])[0]
+            out = subprocess.run(
+                f"echo '{passwd}' | radclient -r 1 -t 3 192.168.0.202:1812 auth testing123 <<< 'User-Name={user}'",
+                shell=True, capture_output=True, text=True, timeout=10).stdout
+            self.json(dict(output=out))
+        elif path == "/api/tools/coa":
+            qs = parse_qs(urlparse(self.path).query)
+            user = qs.get("user", [""])[0]
+            out = subprocess.run(
+                f"echo 'User-Name={user}' | radclient -r 1 -t 5 127.0.0.1:3799 disconnect testing123",
+                shell=True, capture_output=True, text=True, timeout=10).stdout
+            self.json(dict(output=out))
         else:
             self.send_error(404)
 
