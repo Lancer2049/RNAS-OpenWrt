@@ -281,7 +281,7 @@ def generate_firewall(config: Dict[str, Dict[str, str]]) -> str:
 
 
 def generate_snmp(config: Dict[str, Dict[str, str]]) -> str:
-    snmp = config.get("snmp", {})
+    snmp = config.get("monitor.snmp", config.get("snmp", {}))
     nf = config.get("netflow", {})
     sl = config.get("syslog", {})
 
