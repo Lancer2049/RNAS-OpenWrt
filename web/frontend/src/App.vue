@@ -17,6 +17,7 @@
           <a :class="{active:page==='sessions'}" @click="page='sessions'">
             📋 Sessions <span class="badge" v-if="sessions.length">{{ sessions.length }}</span>
           </a>
+          <a :class="{active:page==='proto-monitor'}" @click="page='proto-monitor'">📡 Protocol</a>
           <a :class="{active:page==='network'}" @click="page='network'">🌐 Interfaces</a>
         </div>
         <div class="menu-section">
@@ -58,6 +59,7 @@
         <RADIUSEditor v-if="page==='radius-editor'" />
         <DictionaryBrowser v-if="page==='dictionary'" />
         <SubscriberSim v-if="page==='subscriber-sim'" />
+        <ProtoMonitor v-if="page==='proto-monitor'" />
         <ScenarioRunner v-if="page==='scenario-runner'" />
         <FaultInject v-if="page==='fault-inject'" />
         <SystemPage v-if="page==='system'" />
@@ -78,6 +80,7 @@ import ToolsPage from './components/ToolsPage.vue'
 import RADIUSEditor from './components/RADIUSEditor.vue'
 import DictionaryBrowser from './components/DictionaryBrowser.vue'
 import SubscriberSim from './components/SubscriberSim.vue'
+import ProtoMonitor from './components/ProtoMonitor.vue'
 import ScenarioRunner from './components/ScenarioRunner.vue'
 import FaultInject from './components/FaultInject.vue'
 import SystemPage from './components/SystemPage.vue'

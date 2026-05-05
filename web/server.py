@@ -240,18 +240,24 @@ class RNASHandler(SimpleHTTPRequestHandler):
             proto = qs.get("proto", ["pppoe"])[0]
             user = qs.get("user", ["testuser"])[0]
             passwd = qs.get("pass", ["testpass"])[0]
-            peer_map = {"pppoe":"rnas-pppoe","pptp":"rnas-pptp","sstp":"rnas-sstp"}
-            peer = peer_map.get(proto, "rnas-pppoe")
-            ssh = "sshpass -p 123456 ssh -o StrictHostKeyChecking=no root@192.168.0.201"
             if proto == "l2tp":
-                cmd = f"{ssh} 'systemctl start xl2tpd && sleep 3 && echo c rnas > /var/run/xl2tpd/l2tp-control && sleep 5 && ip addr show dev ppp0 | grep inet | awk \"{{print \\$2}}\"'"
+                subprocess.run("sshpass -p 123456 ssh -o StrictHostKeyChecking=no root@192.168.0.201 'systemctl start xl2tpd 2>/dev/null; sleep 4; echo c rnas > /var/run/xl2tpd/l2tp-control'", shell=True, timeout=15)
+                time.sleep(8)
+                out2 = subprocess.run("sshpass -p 123456 ssh -o StrictHostKeyChecking=no root@192.168.0.201 'ip addr show dev ppp0 2>&1 | grep inet'", shell=True, capture_output=True, text=True, timeout=10)
+                ip = out2.stdout.strip().split()[-1].split('/')[0] if 'inet' in out2.stdout else None
+                self.json(dict(success=ip is not None, ip=ip, protocol=proto))
             else:
-                cmd = f"{ssh} 'timeout 15 pppd call {peer} nodetach user {user} password {passwd} 2>&1 | grep -E \"local.*IP address|auth.*failed\"'"
-            out = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=20)
-            ip_match = [l for l in out.stdout.splitlines()+out.stderr.splitlines() if "local" in l.lower() or "inet " in l]
-            ip = ip_match[0].split()[-1] if ip_match else None
-            ok = "PAP" in out.stdout or ip is not None
-            self.json(dict(success=ok, ip=ip, protocol=proto, error=None if ok else out.stderr[:100]))
+                peer_map = {"pppoe":"rnas-pppoe","pptp":"rnas-pptp","sstp":"rnas-sstp"}
+                peer = peer_map.get(proto, "rnas-pppoe")
+                cmd = f"sshpass -p 123456 ssh -o StrictHostKeyChecking=no root@192.168.0.201 \"timeout 12 pppd call {peer} user {user} password {passwd} nodetach 2>&1\""
+                out = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=20)
+                ip = None
+                for line in out.stdout.splitlines():
+                    if 'local  IP address' in line:
+                        ip = line.split()[-1]
+                        break
+                ok = 'PAP authentication succeeded' in out.stdout
+                self.json(dict(success=ok, ip=ip, protocol=proto))
         elif path == "/api/sim/stop":
             subprocess.run("sshpass -p 123456 ssh -o StrictHostKeyChecking=no root@192.168.0.201 'pkill pppd; pkill xl2tpd; pkill sstpc'", shell=True, timeout=10)
             subprocess.run("/home/lancer/projects/RNAS/build/accel-ppp/install/usr/bin/accel-cmd terminate all 2>/dev/null", shell=True, timeout=5)
