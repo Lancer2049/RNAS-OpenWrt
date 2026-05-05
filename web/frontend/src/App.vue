@@ -29,6 +29,7 @@
         <div class="menu-section">
           <div class="section-title">Services</div>
           <a :class="{active:page==='services'}" @click="page='services'">⚙️ VPN</a>
+          <a :class="{active:page==='ppp-profiles'}" @click="page='ppp-profiles'">📋 Profiles</a>
           <a :class="{active:page==='config'}" @click="page='config'">📝 Config</a>
         </div>
         <div class="menu-section">
@@ -62,6 +63,7 @@
         <NetworkConfig v-if="page==='network'" />
         <ConfigEditor v-if="page==='config'" />
         <ServicesConfig v-if="page==='services'" />
+        <PPPProfiles v-if="page==='ppp-profiles'" />
         <ToolsPage v-if="page==='tools'" />
         <RADIUSEditor v-if="page==='radius-editor'" />
         <DictionaryBrowser v-if="page==='dictionary'" />
@@ -87,6 +89,7 @@ import NetworkConfig from './components/NetworkConfig.vue'
 import TrafficMonitor from './components/TrafficMonitor.vue'
 import ConfigEditor from './components/ConfigEditor.vue'
 import ServicesConfig from './components/ServicesConfig.vue'
+import PPPProfiles from './components/PPPProfiles.vue'
 import ToolsPage from './components/ToolsPage.vue'
 import RADIUSEditor from './components/RADIUSEditor.vue'
 import DictionaryBrowser from './components/DictionaryBrowser.vue'
