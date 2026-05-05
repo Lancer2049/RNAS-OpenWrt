@@ -235,6 +235,11 @@ class RNASHandler(SimpleHTTPRequestHandler):
             self.json(dict(users=users))
         elif path == "/api/aaa/logs":
             self.json(dict(logs=[]))
+        elif path == "/api/radius/stats":
+            raw = run_accel_cmd("show", "stat")
+            stat = parse_stat(raw)
+            stat["radius_port_status"] = "up" if subprocess.run("ss -ulnp | grep -q ':1812'", shell=True).returncode == 0 else "down"
+            self.json(dict(radius=stat))
         elif path == "/api/sim/connect":
             qs = parse_qs(urlparse(self.path).query)
             proto = qs.get("proto", ["pppoe"])[0]
