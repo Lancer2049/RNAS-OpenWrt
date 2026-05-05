@@ -5,12 +5,14 @@
     <div class="card" v-if="interfaces.length">
       <h3>Interfaces</h3>
       <table>
-        <thead><tr><th>Interface</th><th>State</th><th>IP Address</th></tr></thead>
+        <thead><tr><th>Interface</th><th>State</th><th>IP Address</th><th>RX</th><th>TX</th></tr></thead>
         <tbody>
-          <tr v-for="iface in interfaces" :key="iface.name">
+          <tr v-for="iface in ifacesWithRates" :key="iface.name">
             <td class="mono">{{ iface.name }}</td>
             <td><span class="badge" :class="iface.state==='UP'?'up':'down'">{{ iface.state }}</span></td>
             <td class="mono">{{ iface.ip }}</td>
+            <td class="mono rate">{{ formatRate(iface.rxRate) }}</td>
+            <td class="mono rate">{{ formatRate(iface.txRate) }}</td>
           </tr>
         </tbody>
       </table>
@@ -62,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const sections = ref([
   { title: 'Interfaces', data: {}, module: 'network.d.interface/lan', saving: false, saved: false },
@@ -77,11 +79,34 @@ const routes = ref('')
 const arp = ref('')
 const leases = ref('')
 const firewall = ref('')
+const prevRx = ref({}), prevTx = ref({}), prevTs = ref(0)
+let refreshTimer = null
+
+const ifacesWithRates = computed(() => {
+  const now = Date.now(); const dt = Math.max((now - (prevTs.value||now)) / 1000, 1)
+  return interfaces.value.map(i => {
+    const rxRate = prevRx.value[i.name] ? Math.max(0, (i.rx - prevRx.value[i.name]) * 8 / dt) : 0
+    const txRate = prevTx.value[i.name] ? Math.max(0, (i.tx - prevTx.value[i.name]) * 8 / dt) : 0
+    return {...i, rxRate, txRate}
+  })
+})
+
+function formatRate(bps) {
+  if (!bps || bps < 0) return '0 bps'
+  if (bps < 1e3) return bps.toFixed(0) + ' bps'
+  if (bps < 1e6) return (bps/1e3).toFixed(1) + ' Kbps'
+  return (bps/1e6).toFixed(1) + ' Mbps'
+}
 
 async function loadNetStatus() {
   try {
     const res = await fetch('/api/network/status')
     const d = await res.json()
+    const now = Date.now()
+    for (const i of (d.interfaces||[])) {
+      prevRx.value[i.name] = i.rx||0; prevTx.value[i.name] = i.tx||0
+    }
+    prevTs.value = now
     interfaces.value = d.interfaces || []
     routes.value = d.routes || ''
     arp.value = d.arp || ''
@@ -93,28 +118,12 @@ async function loadNetStatus() {
 async function loadAll() {
   const res = await fetch('/api/config')
   const cfg = (await res.json()).config || {}
-  for (const s of sections.value) {
-    s.data = cfg[s.module] || {}
-  }
+  for (const s of sections.value) { s.data = cfg[s.module] || {} }
   loadNetStatus()
 }
 
-async function saveSection(section) {
-  section.saving = true; section.saved = false
-  await fetch(`/api/config/${section.module.replace('.', '/')}`, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(section.data)
-  })
-  section.saving = false; section.saved = true
-}
-
-async function applyAll() {
-  applying.value = true; applied.value = false
-  await fetch('/api/config/apply', { method: 'POST' })
-  applying.value = false; applied.value = true
-}
-
-onMounted(loadAll)
+onMounted(() => { loadAll(); loadNetStatus(); refreshTimer = setInterval(loadNetStatus, 3000) })
+onUnmounted(() => clearInterval(refreshTimer))
 </script>
 
 <style scoped>

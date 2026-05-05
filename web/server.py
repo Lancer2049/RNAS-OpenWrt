@@ -219,7 +219,14 @@ class RNASHandler(SimpleHTTPRequestHandler):
             out = subprocess.run(["ip", "-br", "addr"], capture_output=True, text=True, timeout=3).stdout
             for line in out.splitlines():
                 parts = line.split()
-                if len(parts) >= 3: interfaces.append({"name": parts[0], "state": parts[1], "ip": parts[2]})
+                if len(parts) >= 3:
+                    iface = parts[0]
+                    stats = {"name": iface, "state": parts[1], "ip": parts[2]}
+                    rx = subprocess.run(f"cat /sys/class/net/{iface}/statistics/rx_bytes 2>/dev/null || echo 0", shell=True, capture_output=True, text=True).stdout.strip()
+                    tx = subprocess.run(f"cat /sys/class/net/{iface}/statistics/tx_bytes 2>/dev/null || echo 0", shell=True, capture_output=True, text=True).stdout.strip()
+                    stats["rx"] = int(rx) if rx.isdigit() else 0
+                    stats["tx"] = int(tx) if tx.isdigit() else 0
+                    interfaces.append(stats)
             routes = subprocess.run(["ip", "route"], capture_output=True, text=True, timeout=3).stdout.strip()
             arp = subprocess.run(["ip", "neigh"], capture_output=True, text=True, timeout=3).stdout.strip()
             leases = subprocess.run("cat /var/lib/misc/dnsmasq.leases 2>/dev/null || echo ''", shell=True, capture_output=True, text=True, timeout=3).stdout.strip()
