@@ -28,6 +28,10 @@
       <h3>DHCP Leases</h3>
       <pre class="route-text">{{ leases }}</pre>
     </div>
+    <div class="card" v-if="firewall">
+      <h3>Firewall Rules</h3>
+      <pre class="route-text">{{ firewall }}</pre>
+    </div>
 
     <div class="card" v-for="section in sections" :key="section.title">
       <h3>{{ section.title }}</h3>
@@ -72,6 +76,7 @@ const interfaces = ref([])
 const routes = ref('')
 const arp = ref('')
 const leases = ref('')
+const firewall = ref('')
 
 async function loadNetStatus() {
   try {
@@ -81,6 +86,7 @@ async function loadNetStatus() {
     routes.value = d.routes || ''
     arp.value = d.arp || ''
     leases.value = d.leases || ''
+    firewall.value = d.firewall || ''
   } catch {}
 }
 

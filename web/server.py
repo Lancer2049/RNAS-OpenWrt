@@ -223,7 +223,8 @@ class RNASHandler(SimpleHTTPRequestHandler):
             routes = subprocess.run(["ip", "route"], capture_output=True, text=True, timeout=3).stdout.strip()
             arp = subprocess.run(["ip", "neigh"], capture_output=True, text=True, timeout=3).stdout.strip()
             leases = subprocess.run("cat /var/lib/misc/dnsmasq.leases 2>/dev/null || echo ''", shell=True, capture_output=True, text=True, timeout=3).stdout.strip()
-            self.json(dict(interfaces=interfaces, routes=routes, arp=arp, leases=leases))
+            firewall = subprocess.run(["nft", "list", "ruleset"], capture_output=True, text=True, timeout=3).stdout.strip()
+            self.json(dict(interfaces=interfaces, routes=routes, arp=arp, leases=leases, firewall=firewall))
         elif path == "/api/aaa/users":
             result = subprocess.run(
                 "sshpass -p 123456 ssh -o StrictHostKeyChecking=no root@192.168.0.202 'PGPASSWORD=radpass psql -h localhost -U radius -d radius -t -c \"SELECT username, attribute, value FROM radcheck ORDER BY id DESC LIMIT 50\"'",
