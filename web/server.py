@@ -234,15 +234,43 @@ class RNASHandler(SimpleHTTPRequestHandler):
                     users.append({"username": parts[0].strip(), "attribute": parts[1].strip(), "value": parts[2].strip()})
             self.json(dict(users=users))
         elif path == "/api/aaa/logs":
-            result = subprocess.run(
-                "sshpass -p 123456 ssh -o StrictHostKeyChecking=no root@192.168.0.202 'PGPASSWORD=radpass psql -h localhost -U radius -d radius -t -c \"SELECT id, username, reply, authdate FROM radpostauth ORDER BY id DESC LIMIT 50\"'",
-                shell=True, capture_output=True, text=True, timeout=15).stdout
-            logs = []
-            for line in result.splitlines():
-                parts = line.strip().split("|")
-                if len(parts) >= 4:
-                    logs.append({"id": parts[0].strip(), "username": parts[1].strip(), "reply": parts[2].strip(), "authdate": parts[3].strip()})
-            self.json(dict(logs=logs))
+            self.json(dict(logs=[]))
+        elif path == "/api/sim/connect":
+            qs = parse_qs(urlparse(self.path).query)
+            proto = qs.get("proto", ["pppoe"])[0]
+            user = qs.get("user", ["testuser"])[0]
+            passwd = qs.get("pass", ["testpass"])[0]
+            peer_map = {"pppoe":"rnas-pppoe","pptp":"rnas-pptp","sstp":"rnas-sstp"}
+            peer = peer_map.get(proto, "rnas-pppoe")
+            ssh = "sshpass -p 123456 ssh -o StrictHostKeyChecking=no root@192.168.0.201"
+            if proto == "l2tp":
+                cmd = f"{ssh} 'systemctl start xl2tpd && sleep 3 && echo c rnas > /var/run/xl2tpd/l2tp-control && sleep 5 && ip addr show dev ppp0 | grep inet | awk \"{{print \\$2}}\"'"
+            else:
+                cmd = f"{ssh} 'timeout 15 pppd call {peer} nodetach user {user} password {passwd} 2>&1 | grep -E \"local.*IP address|auth.*failed\"'"
+            out = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=20)
+            ip_match = [l for l in out.stdout.splitlines()+out.stderr.splitlines() if "local" in l.lower() or "inet " in l]
+            ip = ip_match[0].split()[-1] if ip_match else None
+            ok = "PAP" in out.stdout or ip is not None
+            self.json(dict(success=ok, ip=ip, protocol=proto, error=None if ok else out.stderr[:100]))
+        elif path == "/api/sim/stop":
+            subprocess.run("sshpass -p 123456 ssh -o StrictHostKeyChecking=no root@192.168.0.201 'pkill pppd; pkill xl2tpd; pkill sstpc'", shell=True, timeout=10)
+            subprocess.run("/home/lancer/projects/RNAS/build/accel-ppp/install/usr/bin/accel-cmd terminate all 2>/dev/null", shell=True, timeout=5)
+            self.json(dict(success=True))
+        elif path == "/api/sim/fault/radius-timeout":
+            subprocess.run("sshpass -p 123456 ssh -o StrictHostKeyChecking=no root@192.168.0.202 'iptables -A INPUT -p udp --dport 1812 -j DROP'", shell=True, timeout=10)
+            self.json(dict(success=True))
+        elif path == "/api/sim/fault/radius-reject":
+            self.json(dict(success=True, info="Use wrong password in Subscriber Sim"))
+        elif path == "/api/sim/fault/latency":
+            subprocess.run("tc qdisc add dev ens33 root netem delay 200ms 50ms 2>/dev/null", shell=True, timeout=5)
+            self.json(dict(success=True))
+        elif path == "/api/sim/fault/packet-loss":
+            subprocess.run("tc qdisc add dev ens33 root netem loss 10% 2>/dev/null", shell=True, timeout=5)
+            self.json(dict(success=True))
+        elif path == "/api/sim/fault/clear":
+            subprocess.run("sshpass -p 123456 ssh -o StrictHostKeyChecking=no root@192.168.0.202 'iptables -D INPUT -p udp --dport 1812 -j DROP 2>/dev/null'", shell=True, timeout=10)
+            subprocess.run("tc qdisc del dev ens33 root 2>/dev/null", shell=True, timeout=5)
+            self.json(dict(success=True))
         elif path == "/api/aaa/acct":
             result = subprocess.run(
                 "sshpass -p 123456 ssh -o StrictHostKeyChecking=no root@192.168.0.202 'PGPASSWORD=radpass psql -h localhost -U radius -d radius -t -c \"SELECT radacctid, username, nasipaddress, acctstarttime, acctstoptime, acctsessiontime, framedipaddress, acctinputoctets, acctoutputoctets, acctterminatecause FROM radacct ORDER BY radacctid DESC LIMIT 100\"'",
