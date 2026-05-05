@@ -240,6 +240,23 @@ class RNASHandler(SimpleHTTPRequestHandler):
             stat = parse_stat(raw)
             stat["radius_port_status"] = "up" if subprocess.run("ss -ulnp | grep -q ':1812'", shell=True).returncode == 0 else "down"
             self.json(dict(radius=stat))
+        elif path == "/api/queues":
+            self.json(dict(queues=[]))
+        elif path == "/api/sniffer/start":
+            subprocess.run("pkill tcpdump 2>/dev/null", shell=True)
+            subprocess.run("nohup tcpdump -i any -w /tmp/rnas-sniffer.pcap udp port 1812 or udp port 1813 or udp port 3799 &", shell=True, timeout=5)
+            self.json(dict(success=True, message="Sniffer started"))
+        elif path == "/api/sniffer/stop":
+            subprocess.run("pkill tcpdump 2>/dev/null", shell=True, timeout=5)
+            self.json(dict(success=True, message="Sniffer stopped"))
+        elif path == "/api/sniffer/status":
+            running = subprocess.run("pgrep -f 'tcpdump.*rnas-sniffer'", shell=True, capture_output=True).returncode == 0
+            size = 0
+            try: size = os.path.getsize("/tmp/rnas-sniffer.pcap")
+            except: pass
+            self.json(dict(running=running, size=size))
+        elif path == "/api/scheduler":
+            self.json(dict(tasks=[]))
         elif path == "/api/sim/connect":
             qs = parse_qs(urlparse(self.path).query)
             proto = qs.get("proto", ["pppoe"])[0]

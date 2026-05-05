@@ -18,7 +18,6 @@
             📋 Sessions <span class="badge" v-if="sessions.length">{{ sessions.length }}</span>
           </a>
           <a :class="{active:page==='proto-monitor'}" @click="page='proto-monitor'">📡 Protocol</a>
-          <a :class="{active:page==='torch'}" @click="page='torch'">🔥 Torch</a>
           <a :class="{active:page==='network'}" @click="page='network'">🌐 Interfaces</a>
         </div>
         <div class="menu-section">
@@ -31,6 +30,13 @@
           <div class="section-title">Services</div>
           <a :class="{active:page==='services'}" @click="page='services'">⚙️ VPN</a>
           <a :class="{active:page==='config'}" @click="page='config'">📝 Config</a>
+        </div>
+        <div class="menu-section">
+          <div class="section-title">Tools</div>
+          <a :class="{active:page==='torch'}" @click="page='torch'">🔥 Torch</a>
+          <a :class="{active:page==='queues'}" @click="page='queues'">📏 Queues</a>
+          <a :class="{active:page==='sniffer'}" @click="page='sniffer'">📡 Sniffer</a>
+          <a :class="{active:page==='scheduler'}" @click="page='scheduler'">⏰ Scheduler</a>
         </div>
         <div class="menu-section">
           <div class="section-title">RADIUS Tools</div>
@@ -62,6 +68,9 @@
         <SubscriberSim v-if="page==='subscriber-sim'" />
         <ProtoMonitor v-if="page==='proto-monitor'" />
         <TrafficTorch v-if="page==='torch'" />
+        <QueueManager v-if="page==='queues'" />
+        <PacketSniffer v-if="page==='sniffer'" />
+        <Scheduler v-if="page==='scheduler'" />
         <ScenarioRunner v-if="page==='scenario-runner'" />
         <FaultInject v-if="page==='fault-inject'" />
         <SystemPage v-if="page==='system'" />
@@ -84,6 +93,9 @@ import DictionaryBrowser from './components/DictionaryBrowser.vue'
 import SubscriberSim from './components/SubscriberSim.vue'
 import ProtoMonitor from './components/ProtoMonitor.vue'
 import TrafficTorch from './components/TrafficTorch.vue'
+import QueueManager from './components/QueueManager.vue'
+import PacketSniffer from './components/PacketSniffer.vue'
+import Scheduler from './components/Scheduler.vue'
 import ScenarioRunner from './components/ScenarioRunner.vue'
 import FaultInject from './components/FaultInject.vue'
 import SystemPage from './components/SystemPage.vue'
