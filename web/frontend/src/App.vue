@@ -159,4 +159,3 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC
 .content { flex: 1; overflow-y: auto; padding: 20px 28px; background: #f8fafc; }
 .breadcrumb { font-size: 11px; color: #94a3b8; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; }
 </style>
-</style>
