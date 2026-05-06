@@ -13,31 +13,25 @@
       <nav class="sidebar">
         <div class="menu-section">
           <div class="section-title">Monitoring</div>
-          <a :class="{active:page==='overview'}" @click="page='overview'">📊 Dashboard</a>
-          <a :class="{active:page==='sessions'}" @click="page='sessions'">
+          <a :class="{active:page==='overview'}" @click="page='overview'" title="System status & traffic">📊 Dashboard</a>
+          <a :class="{active:page==='sessions'}" @click="page='sessions'" title="Active PPP connections">
             📋 Sessions <span class="badge" v-if="sessions.length">{{ sessions.length }}</span>
           </a>
-          <a :class="{active:page==='proto-monitor'}" @click="page='proto-monitor'">📡 Protocol</a>
-          <a :class="{active:page==='network'}" @click="page='network'">🌐 Interfaces</a>
+          <a :class="{active:page==='proto-monitor'}" @click="page='proto-monitor'" title="Real-time RADIUS protocol events">📡 Protocol</a>
+          <a :class="{active:page==='network'}" @click="page='network'" title="Interfaces, routes, ARP, firewall">🌐 Interfaces</a>
         </div>
         <div class="menu-section">
           <div class="section-title">Simulation</div>
-          <a :class="{active:page==='subscriber-sim'}" @click="page='subscriber-sim'">👥 Subscribers</a>
-          <a :class="{active:page==='scenario-runner'}" @click="page='scenario-runner'">▶ Scenario</a>
-          <a :class="{active:page==='fault-inject'}" @click="page='fault-inject'">⚠ Fault Inject</a>
-        </div>
-        <div class="menu-section">
-          <div class="section-title">Services</div>
-          <a :class="{active:page==='services'}" @click="page='services'">⚙️ VPN</a>
-          <a :class="{active:page==='ppp-profiles'}" @click="page='ppp-profiles'">📋 Profiles</a>
-          <a :class="{active:page==='config'}" @click="page='config'">📝 Config</a>
+          <a :class="{active:page==='subscriber-sim'}" @click="page='subscriber-sim'" title="Simulate multiple CPE clients">👥 Subscribers</a>
+          <a :class="{active:page==='scenario-runner'}" @click="page='scenario-runner'" title="One-click preset test scenarios">▶ Scenario</a>
+          <a :class="{active:page==='fault-inject'}" @click="page='fault-inject'" title="Simulate network failures">⚠ Fault Inject</a>
         </div>
         <div class="menu-section">
           <div class="section-title">Tools</div>
-          <a :class="{active:page==='torch'}" @click="page='torch'">🔥 Torch</a>
-          <a :class="{active:page==='queues'}" @click="page='queues'">📏 Queues</a>
-          <a :class="{active:page==='sniffer'}" @click="page='sniffer'">📡 Sniffer</a>
-          <a :class="{active:page==='scheduler'}" @click="page='scheduler'">⏰ Scheduler</a>
+          <a :class="{active:page==='torch'}" @click="page='torch'" title="Real-time per-session bandwidth">🔥 Torch</a>
+          <a :class="{active:page==='queues'}" @click="page='queues'" title="Bandwidth control rules">📏 Queues</a>
+          <a :class="{active:page==='sniffer'}" @click="page='sniffer'" title="Capture RADIUS packets">📡 Sniffer</a>
+          <a :class="{active:page==='scheduler'}" @click="page='scheduler'" title="Automated test runs">⏰ Scheduler</a>
         </div>
         <div class="menu-section">
           <div class="section-title">RADIUS Tools</div>
@@ -158,4 +152,30 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC
 
 .content { flex: 1; overflow-y: auto; padding: 20px 28px; background: #f8fafc; }
 .breadcrumb { font-size: 11px; color: #94a3b8; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; }
+
+/* Global table polish */
+table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+thead { background: #f8fafc; }
+th { color: #64748b; font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 12px; text-align: left; border-bottom: 2px solid #e2e8f0; }
+td { padding: 9px 12px; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+tbody tr:hover { background: #f8faff; }
+tbody tr:nth-child(even) { background: #fafbfc; }
+tbody tr:nth-child(even):hover { background: #f0f4ff; }
+
+/* Global button polish */
+button { font-family: inherit; }
+.btn-primary { padding: 6px 14px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; }
+.btn-primary:hover { background: #2563eb; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-danger { padding: 6px 14px; background: #ef4444; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; }
+.btn-danger:hover { background: #dc2626; }
+
+/* Global empty state */
+.empty-state { text-align: center; padding: 48px 20px; color: #94a3b8; }
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state .text { font-size: 14px; }
+
+/* Global hint text */
+.page-hint { font-size: 13px; color: #94a3b8; margin-bottom: 16px; }
+.page-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; color: #1e293b; }
 </style>
