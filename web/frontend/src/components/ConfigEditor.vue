@@ -22,14 +22,9 @@
         <label>{{ key }}</label>
         <input v-model="currentValues[key]" :placeholder="val || '...'" />
       </div>
-      <div class="field-row new-field">
-        <input v-model="newKey" placeholder="new key" />
-        <input v-model="newVal" placeholder="value" />
-        <button class="btn-add" @click="addField" :disabled="!newKey">Add</button>
-      </div>
     </div>
-    <div v-else-if="selectedModule" class="empty">No config data loaded</div>
-    <div v-else class="empty">Select a module to edit</div>
+    <div v-else-if="selectedModule" class="empty-state"><div class="icon">📝</div><div class="text">No data for {{ selectedModule }}</div></div>
+    <div v-else class="empty-state"><div class="icon">📝</div><div class="text">Select a module to edit</div><div class="sub">Choose from {{ modules.length }} configuration sections</div></div>
 
     <div v-if="message" class="message" :class="messageType">{{ message }}</div>
   </div>
