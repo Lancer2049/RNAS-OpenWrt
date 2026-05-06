@@ -44,12 +44,16 @@
         <h3>Response</h3>
         <div v-if="response" class="response-box">
           <div class="response-meta">
-            <span class="badge" :class="responseType">{{ responseType }}</span>
-            <span class="payload-hint">{{ payload }}</span>
+            <span class="badge" :class="responseType">{{ responseType.toUpperCase() }}</span>
+            <span class="payload-hint">Attributes: {{ attributes.filter(a=>a.name).length }}</span>
           </div>
-          <pre class="response-text">{{ response.output }}</pre>
+          <div class="response-raw">{{ response.output }}</div>
         </div>
-        <div v-else class="empty">Send a request to see the response</div>
+        <div v-else class="empty-state">
+          <div class="icon">🔧</div>
+          <div class="text">Build and send a RADIUS request</div>
+          <div class="sub">Select attributes from the dictionary and click Send</div>
+        </div>
       </div>
     </div>
   </div>
@@ -133,7 +137,10 @@ onMounted(loadDict)
 .badge.reject { background: #fee2e2; color: #991b1b; }
 .badge.info { background: #dbeafe; color: #1e40af; }
 .badge.error { background: #fef3c7; color: #92400e; }
-.payload-hint { font-size: 11px; color: #999; font-family: monospace; }
-.response-text { background: #f8f9fa; padding: 12px; border-radius: 4px; font-size: 12px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; border: 1px solid #eee; }
-.empty { text-align: center; color: #999; padding: 40px; }
+.payload-hint { font-size: 11px; color: #94a3b8; font-family: monospace; }
+.response-raw { background: #1e293b; color: #0f0; padding: 14px; border-radius: 6px; font-family: monospace; font-size: 12px; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+.empty-state { text-align: center; padding: 40px; color: #94a3b8; }
+.empty-state .icon { font-size: 36px; margin-bottom: 8px; }
+.empty-state .text { font-size: 14px; margin-bottom: 4px; }
+.empty-state .sub { font-size: 12px; }
 </style>

@@ -26,7 +26,11 @@
         </tr>
       </tbody>
     </table>
-    <div v-else class="empty">No queue rules defined</div>
+    <div v-else class="empty-state">
+      <div class="icon">📏</div>
+      <div class="text">No queue rules defined</div>
+      <div class="sub">Add bandwidth control rules above to manage traffic shaping</div>
+    </div>
   </div>
 </template>
 
