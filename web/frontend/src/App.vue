@@ -52,6 +52,7 @@
           {{ breadcrumb }}
         </div>
         <StatusCard v-if="page==='overview'||page==='sessions'" :service="service" />
+        <QuickActions v-if="page==='overview'" @nav="page=$event" @refresh="fetchData" />
         <SessionsTable v-if="page==='sessions'||page==='overview'" :sessions="sessions" :loading="loading" @disconnect="handleDisconnect" @refresh="fetchData" />
         <TrafficMonitor v-if="page==='overview'" />
         <NetworkConfig v-if="page==='network'" />
@@ -78,6 +79,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import StatusCard from './components/StatusCard.vue'
+import QuickActions from './components/QuickActions.vue'
 import SessionsTable from './components/SessionsTable.vue'
 import NetworkConfig from './components/NetworkConfig.vue'
 import TrafficMonitor from './components/TrafficMonitor.vue'
