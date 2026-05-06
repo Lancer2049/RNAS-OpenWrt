@@ -24,7 +24,7 @@
       </thead>
       <tbody>
         <template v-for="s in sorted" :key="s.sid">
-          <tr @click="toggleDetail(s)" class="session-row" :class="{expanded: expanded===s.sid}">
+          <tr @click="$emit('detail',s)" class="session-row" :class="{expanded: expanded===s.sid}">
             <td>{{ s.username||'-' }}</td>
             <td><span class="type-badge">{{ s.type||'-' }}</span></td>
             <td class="mono">{{ s.calling_sid||s.sid }}</td>
@@ -62,7 +62,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 const props = defineProps({ sessions: Array, loading: Boolean })
-defineEmits(['disconnect', 'refresh'])
+defineEmits(['disconnect', 'refresh', 'detail'])
 
 const filter = ref(''), sortBy = ref('uptime_raw'), expanded = ref(null)
 const prevRx = ref({}), prevTx = ref({}), prevTs = ref(0)

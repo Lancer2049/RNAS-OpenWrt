@@ -53,7 +53,8 @@
         </div>
         <StatusCard v-if="page==='overview'||page==='sessions'" :service="service" />
         <QuickActions v-if="page==='overview'" @nav="page=$event" @refresh="fetchData" />
-        <SessionsTable v-if="page==='sessions'||page==='overview'" :sessions="sessions" :loading="loading" @disconnect="handleDisconnect" @refresh="fetchData" />
+        <SessionsTable v-if="page==='sessions'||page==='overview'" :sessions="sessions" :loading="loading" @disconnect="handleDisconnect" @refresh="fetchData" @detail="(s) => { selectedSession = s; page = 'session-detail' }" />
+        <SessionDetail v-if="page==='session-detail'" :session="selectedSession" @back="page='sessions'" />
         <TrafficMonitor v-if="page==='overview'" />
         <NetworkConfig v-if="page==='network'" />
         <ConfigEditor v-if="page==='config'" />
@@ -81,6 +82,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import StatusCard from './components/StatusCard.vue'
 import QuickActions from './components/QuickActions.vue'
 import SessionsTable from './components/SessionsTable.vue'
+import SessionDetail from './components/SessionDetail.vue'
 import NetworkConfig from './components/NetworkConfig.vue'
 import TrafficMonitor from './components/TrafficMonitor.vue'
 import ConfigEditor from './components/ConfigEditor.vue'
@@ -102,6 +104,7 @@ import SystemPage from './components/SystemPage.vue'
 const page = ref('overview')
 const service = ref({ uptime: '--', cpu: '--', mem: '--' })
 const sessions = ref([])
+const selectedSession = ref(null)
 const loading = ref(true)
 const airosOnline = ref(false)
 const airosUrl = ref('http://192.168.0.202:8000')
