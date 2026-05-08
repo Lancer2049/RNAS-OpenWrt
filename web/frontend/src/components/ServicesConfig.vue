@@ -1,6 +1,15 @@
 <template>
   <div class="services-section">
-    <div class="section-header"><h2>Services Configuration</h2></div>
+    <div class="section-header"><h2>Services</h2></div>
+
+    <div class="status-bar">
+      <div class="status-item" v-for="s in vpnStatus" :key="s.name">
+        <span class="s-icon">{{ s.icon }}</span>
+        <span class="s-name">{{ s.name }}</span>
+        <span class="s-state" :class="s.active?'on':'off'">{{ s.active ? 'UP' : 'DOWN' }}</span>
+        <span class="s-detail" v-if="s.detail">{{ s.detail }}</span>
+      </div>
+    </div>
 
     <div class="card" v-for="svc in services" :key="svc.title">
       <h3>{{ svc.title }}</h3>
