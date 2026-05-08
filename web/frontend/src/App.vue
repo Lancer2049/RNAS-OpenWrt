@@ -55,6 +55,7 @@
         </div>
         <StatusCard v-if="page==='overview'||page==='sessions'" :service="service" />
         <QuickActions v-if="page==='overview'" @nav="page=$event" @refresh="fetchData" />
+        <SystemHealth v-if="page==='overview'" />
         <SystemResources v-if="page==='overview'" />
         <ActivityFeed v-if="page==='overview'" />
         <SessionsTable v-if="page==='sessions'||page==='overview'" :sessions="sessions" :loading="loading" @disconnect="handleDisconnect" @refresh="fetchData" @detail="(s) => { selectedSession = s; page = 'session-detail' }" />
@@ -85,6 +86,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import StatusCard from './components/StatusCard.vue'
 import QuickActions from './components/QuickActions.vue'
+import SystemHealth from './components/SystemHealth.vue'
 import SystemResources from './components/SystemResources.vue'
 import ActivityFeed from './components/ActivityFeed.vue'
 import SessionsTable from './components/SessionsTable.vue'
