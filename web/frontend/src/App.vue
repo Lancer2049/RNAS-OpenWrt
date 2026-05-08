@@ -40,10 +40,9 @@
           <a :class="{active:page==='tools'}" @click="page='tools'">🛠 Tools</a>
         </div>
         <div class="menu-section">
-          <div class="section-title">Services</div>
-          <a :class="{active:page==='services'}" @click="page='services'">⚙️ VPN</a>
-          <a :class="{active:page==='proto-config'}" @click="page='proto-config'">📋 Protocols</a>
-          <a :class="{active:page==='config'}" @click="page='config'">📝 Config</a>
+          <div class="section-title">System</div>
+          <a :class="{active:page==='system'}" @click="page='system'">💻 System</a>
+          <a :class="{active:page==='test-results'}" @click="page='test-results'">🧪 Tests</a>
         </div>
         <div class="sidebar-footer">
           <small>RNAS v3.0</small>
@@ -77,6 +76,7 @@
         <ScenarioRunner v-if="page==='scenario-runner'" />
         <FaultInject v-if="page==='fault-inject'" />
         <SystemPage v-if="page==='system'" />
+        <TestResults v-if="page==='test-results'" />
       </div>
     </div>
   </div>
@@ -108,6 +108,7 @@ import Scheduler from './components/Scheduler.vue'
 import ScenarioRunner from './components/ScenarioRunner.vue'
 import FaultInject from './components/FaultInject.vue'
 import SystemPage from './components/SystemPage.vue'
+import TestResults from './components/TestResults.vue'
 
 const page = ref('overview')
 const service = ref({ uptime: '--', cpu: '--', mem: '--' })
