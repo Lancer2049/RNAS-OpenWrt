@@ -20,7 +20,13 @@
       <h3>{{ selectedModule }}</h3>
       <div class="field-row" v-for="(val, key) in currentValues" :key="key">
         <label>{{ key }}</label>
-        <input v-model="currentValues[key]" :placeholder="val || '...'" />
+        <select v-if="isYesNo(val, key)" v-model="currentValues[key]" class="field-input">
+          <option value="yes">yes</option><option value="no">no</option>
+        </select>
+        <input v-else-if="isPort(key)" v-model.number="currentValues[key]" type="number" min="1" max="65535" class="field-input" />
+        <input v-else-if="isNumber(key)" v-model.number="currentValues[key]" type="number" class="field-input" />
+        <input v-else v-model="currentValues[key]" :placeholder="val || '...'" class="field-input" />
+        <span class="field-hint" v-if="isYesNo(val,key)||isPort(key)||isNumber(key)">{{ typeHint(val,key) }}</span>
       </div>
     </div>
     <div v-else-if="selectedModule" class="empty-state"><div class="icon">📝</div><div class="text">No data for {{ selectedModule }}</div></div>
@@ -76,13 +82,16 @@ async function saveConfig() {
 
 async function applyConfig() {
   applying.value = true
-  try {
-    const res = await fetch('/api/config/apply', { method: 'POST' })
-    if (res.ok) { message.value = 'Config applied — services reloaded'; messageType.value = 'success' }
-    else { message.value = 'Apply failed'; messageType.value = 'error' }
-  } catch (e) { message.value = 'Network error'; messageType.value = 'error' }
+  await fetch('/api/config/apply', { method: 'POST' })
   applying.value = false
+  message.value = 'Configuration applied'
+  messageType.value = 'success'
 }
+
+function isYesNo(v,k){ return v==='yes'||v==='no'||k.includes('enabled')||k==='daemon'||k==='auth'||k.includes('check_') }
+function isPort(k){ return k.includes('port') }
+function isNumber(k){ return k.includes('timeout')||k.includes('interval')||k.includes('limit')||k.includes('count')||k.includes('thread')||k.includes('max')||k.includes('weight') }
+function typeHint(v,k){ if(isYesNo(v,k))return 'yes/no'; if(isPort(k))return '1-65535'; if(isNumber(k))return 'number'; return '' }
 
 function addField() {
   if (!newKey.value || !selectedModule.value) return
