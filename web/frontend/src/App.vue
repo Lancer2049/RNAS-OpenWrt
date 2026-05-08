@@ -40,8 +40,10 @@
           <a :class="{active:page==='tools'}" @click="page='tools'">🛠 Tools</a>
         </div>
         <div class="menu-section">
-          <div class="section-title">System</div>
-          <a :class="{active:page==='system'}" @click="page='system'">💻 System</a>
+          <div class="section-title">Services</div>
+          <a :class="{active:page==='services'}" @click="page='services'">⚙️ VPN</a>
+          <a :class="{active:page==='proto-config'}" @click="page='proto-config'">📋 Protocols</a>
+          <a :class="{active:page==='config'}" @click="page='config'">📝 Config</a>
         </div>
         <div class="sidebar-footer">
           <small>RNAS v3.0</small>
@@ -60,7 +62,7 @@
         <NetworkConfig v-if="page==='network'" />
         <ConfigEditor v-if="page==='config'" />
         <ServicesConfig v-if="page==='services'" />
-        <PPPProfiles v-if="page==='ppp-profiles'" />
+        <ProtocolConfig v-if="page==='proto-config'" />
         <ToolsPage v-if="page==='tools'" />
         <RADIUSEditor v-if="page==='radius-editor'" />
         <DictionaryBrowser v-if="page==='dictionary'" />
@@ -89,7 +91,7 @@ import NetworkConfig from './components/NetworkConfig.vue'
 import TrafficMonitor from './components/TrafficMonitor.vue'
 import ConfigEditor from './components/ConfigEditor.vue'
 import ServicesConfig from './components/ServicesConfig.vue'
-import PPPProfiles from './components/PPPProfiles.vue'
+import ProtocolConfig from './components/ProtocolConfig.vue'
 import ToolsPage from './components/ToolsPage.vue'
 import RADIUSEditor from './components/RADIUSEditor.vue'
 import DictionaryBrowser from './components/DictionaryBrowser.vue'
